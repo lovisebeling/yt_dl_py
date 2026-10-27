@@ -1,0 +1,5 @@
+customtkinter>=5.2.2,<6
+fastapi>=0.115,<1
+uvicorn>=0.34,<1
+yt-dlp[default]>=2026.8.19
+pyinstaller>=6.12,<7

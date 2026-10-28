@@ -5,6 +5,7 @@ import os
 import shutil
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
 import tkinter
 
@@ -68,11 +69,24 @@ def main() -> int:
     finally:
         shutil.rmtree(tk_temp, ignore_errors=True)
     if completed.returncode == 0:
+        app_dir = ROOT / "dist" / "Sonore"
+        if not (app_dir / "Sonore.exe").is_file():
+            print(f"Build réussi, mais exécutable introuvable dans {app_dir}.", file=sys.stderr)
+            return 1
+        archive = ROOT / "dist" / "Sonore-windows-x64.zip"
+        if archive.exists():
+            archive.unlink()
+        with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as package:
+            for path in sorted(app_dir.rglob("*")):
+                if not path.is_file() or path.name == "settings.json":
+                    continue
+                package.write(path, Path("Sonore") / path.relative_to(app_dir))
         if ffmpeg.is_file():
             print("FFmpeg a été inclus dans le dossier de l’application.")
         else:
             print("FFmpeg non inclus : Sonore utilisera FFmpeg installé dans le PATH.")
-        print(f"Application construite : {ROOT / 'dist' / 'Sonore' / 'Sonore.exe'}")
+        print(f"Application construite : {app_dir / 'Sonore.exe'}")
+        print(f"Paquet prêt pour une release GitHub : {archive}")
     return completed.returncode
 
 

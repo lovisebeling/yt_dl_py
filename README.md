@@ -10,6 +10,16 @@ Application Windows locale pour télécharger l’audio des vidéos YouTube, le 
 
 ## Installation et lancement
 
+### Utiliser la version Windows (sans installer Python)
+
+1. Ouvrez **Releases** sur la page GitHub du projet et téléchargez `Sonore-windows-x64.zip` dans la dernière version.
+2. Décompressez complètement l’archive dans un dossier où vous avez le droit d’écrire.
+3. Lancez `Sonore/Sonore.exe` (Windows peut afficher un avertissement pour une application non signée ; vérifiez que le fichier vient bien de la release du projet).
+
+Le ZIP contient le dossier complet nécessaire à l’application : ne déplacez pas `Sonore.exe` seul hors de ce dossier. Python n’est pas requis. FFmpeg doit être installé et présent dans `PATH` pour convertir les téléchargements en MP3, sauf si le mainteneur l’a inclus dans la version publiée. Les réglages sont enregistrés dans `settings.json` à côté de `Sonore.exe`.
+
+### Lancer depuis les sources
+
 ```powershell
 py -m venv .venv
 .\.venv\Scripts\Activate.ps1
@@ -29,13 +39,19 @@ Dans **Réglages**, gérez les séquences à supprimer et les remplacements de t
 
 ## Construction de l’exécutable Windows
 
+La compilation se fait sous Windows. Python 3.10 ou ultérieur est requis. Depuis la racine du dépôt :
+
 ```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
-# Facultatif : copiez ffmpeg.exe dans tools/ffmpeg/ pour l’inclure.
+# Facultatif : placez ffmpeg.exe dans tools/ffmpeg/ pour l’inclure au paquet.
 python scripts/build.py
 ```
 
-L’exécutable est produit dans `dist/Sonore/Sonore.exe` (mode dossier, recommandé pour yt-dlp et FFmpeg). Si FFmpeg n’est pas fourni dans `tools/ffmpeg/`, l’application le recherche dans le `PATH` du système.
+Le script construit une application Windows 64 bits en mode dossier, puis crée `dist/Sonore-windows-x64.zip`. Publiez ce ZIP comme asset d’une GitHub Release ; il contient le dossier complet `Sonore/` et son exécutable `Sonore.exe`. Le binaire seul se trouve aussi dans `dist/Sonore/Sonore.exe`, mais ne doit pas être distribué séparément. Le ZIP exclut `settings.json` pour ne pas publier les réglages locaux du poste de compilation. Si FFmpeg n’est pas fourni dans `tools/ffmpeg/`, l’application le recherche dans le `PATH` du système.
+
+Le workflow GitHub Actions `.github/workflows/release.yml` peut aussi construire le ZIP automatiquement quand une release est publiée. Il fonctionne également à la demande depuis l’onglet **Actions** et fournit alors le ZIP comme artefact téléchargeable.
 
 ## Structure
 

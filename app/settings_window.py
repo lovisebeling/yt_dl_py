@@ -36,6 +36,7 @@ class SettingsWindow(ctk.CTkToplevel):
         footer.grid(row=1, column=0, sticky="ew", padx=20, pady=(4, 16))
         ctk.CTkButton(footer, text="Fermer", width=100, fg_color="#30353d", hover_color="#414752", command=self.destroy).pack(side="right", padx=(8, 0))
         ctk.CTkButton(footer, text="Enregistrer", width=125, command=self._save).pack(side="right")
+        ctk.CTkButton(footer, text="Appliquer aux fichiers d’un dossier…", width=220, fg_color="#30353d", hover_color="#414752", command=self._apply_to_folder).pack(side="left")
 
     def _build_removals(self, parent: ctk.CTkFrame) -> None:
         parent.grid_columnconfigure(0, weight=1)
@@ -123,3 +124,7 @@ class SettingsWindow(ctk.CTkToplevel):
     def _save(self) -> None:
         self.on_save({"removals": self.removals, "replacements": self.replacements})
         self.destroy()
+
+    def _apply_to_folder(self) -> None:
+        self.on_save({"removals": self.removals, "replacements": self.replacements})
+        self.master._apply_title_rules_to_folder(self)

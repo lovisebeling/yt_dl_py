@@ -4,8 +4,9 @@ from __future__ import annotations
 import json
 import queue
 import threading
+from pathlib import Path
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -13,6 +14,7 @@ from urllib.request import Request, urlopen
 import customtkinter as ctk
 
 from app.config import SettingsStore
+from app.downloads import clean_title, sanitize_filename
 from app.settings_window import SettingsWindow
 
 API_BASE = "http://127.0.0.1:8765"
@@ -215,6 +217,44 @@ class SonoreApp(ctk.CTk):
             except OSError as error:
                 self._log(f"Impossible d’enregistrer les réglages : {error}")
         SettingsWindow(self, self.settings, save_rules)
+
+    def _apply_title_rules_to_folder(self, dialog_parent: tk.Misc) -> None:
+        folder = filedialog.askdirectory(
+            title="Choisir le dossier dont les titres seront mis à jour",
+            parent=dialog_parent,
+        )
+        if not folder:
+            return
+        supported = {".mp3", ".m4a", ".wav", ".flac", ".aac", ".ogg", ".opus", ".wma"}
+        files = [path for path in Path(folder).iterdir() if path.is_file() and path.suffix.lower() in supported]
+        changes = [(path, sanitize_filename(clean_title(path.stem, self.settings)) or path.stem) for path in files]
+        changes = [(path, name) for path, name in changes if name != path.stem]
+        if not changes:
+            messagebox.showinfo("Titres", "Aucun titre audio à modifier dans ce dossier.", parent=dialog_parent)
+            return
+        if not messagebox.askyesno(
+            "Appliquer les règles de titre",
+            f"Modifier le nom de {len(changes)} fichier(s) audio dans ce dossier ?",
+            parent=dialog_parent,
+        ):
+            return
+        renamed = 0
+        for source, title in changes:
+            destination = source.with_name(f"{title}{source.suffix}")
+            if destination.exists():
+                number = 1
+                while True:
+                    candidate = source.with_name(f"{title} ({number}){source.suffix}")
+                    if not candidate.exists():
+                        destination = candidate
+                        break
+                    number += 1
+            try:
+                source.rename(destination)
+                renamed += 1
+            except OSError as error:
+                self._log(f"Impossible de renommer {source.name} : {error}")
+        messagebox.showinfo("Titres", f"{renamed} fichier(s) renommé(s).", parent=dialog_parent)
 
     def _on_close(self) -> None:
         if self.after_id:

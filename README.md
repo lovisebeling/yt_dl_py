@@ -21,7 +21,7 @@ L’interface CustomTkinter en mode sombre démarre un serveur FastAPI local inv
 
 Collez un lien YouTube puis cliquez sur **Télécharger** ou appuyez sur Entrée. **Parcourir** permet de choisir le dossier. Les modes sont exclusifs : **Ignorer les playlists** traite uniquement la vidéo ; **Télécharger cette vidéo et celles après elle dans la playlist** traite la vidéo indiquée puis les suivantes. Plusieurs pistes sont regroupées dans un ZIP. Les étapes et confirmations apparaissent dans la console intégrée, sans fenêtre de réussite.
 
-Dans **Réglages**, gérez les séquences à supprimer et les remplacements de titre. Un remplacement peut être ajouté à la fin du titre.
+Dans **Réglages**, gérez les séquences à supprimer et les remplacements de titre. Un remplacement peut être ajouté à la fin du titre. Le bouton **Appliquer aux fichiers d’un dossier…** permet aussi de renommer les fichiers audio déjà présents dans un dossier choisi selon les règles enregistrées ; une confirmation est demandée avant le renommage.
 
 ## Configuration enregistrée
 

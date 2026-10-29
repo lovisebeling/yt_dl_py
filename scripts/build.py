@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def _copy_virtual_tree(interpreter, source: str, destination: Path) -> None:
-    """Extrait les bibliothèques Tcl/Tk intégrées dans le zipfs de Python 3.14."""
+    """Extract Tcl/Tk libraries bundled in Python 3.14's zipfs."""
     destination.mkdir(parents=True, exist_ok=True)
     for entry in interpreter.call("glob", "-nocomplain", "-directory", source, "*"):
         relative = str(entry)[len(source):].lstrip("/")
@@ -40,16 +40,18 @@ def _collect_zipfs_tk(args: list[str], temp_dir: Path) -> None:
         _copy_virtual_tree(root.tk, tcl_source, tcl_dest)
         _copy_virtual_tree(root.tk, tk_source, tk_dest)
         args.extend(["--add-data", f"{tcl_dest}{os.pathsep}_tcl_data", "--add-data", f"{tk_dest}{os.pathsep}_tk_data"])
-        print("Bibliothèques Tcl/Tk extraites du zipfs de Python et incluses dans le build.")
+        print("Extracted Tcl/Tk libraries from Python zipfs and included them in the build.")
     finally:
         root.destroy()
 
 
 def main() -> int:
     if sys.platform != "win32":
-        print("Le build PyInstaller est prévu pour Windows. Lancez ce script sous Windows.", file=sys.stderr)
+        print("The PyInstaller build requires Windows. Run this script on Windows.", file=sys.stderr)
         return 2
     executable = sys.executable
+    legacy_settings_path = ROOT / "dist" / "Sonore" / "settings.json"
+    legacy_settings = legacy_settings_path.read_bytes() if legacy_settings_path.is_file() else None
     args = [executable, "-m", "PyInstaller", "--noconfirm", "--windowed", "--onedir", "--name", "Sonore", "--collect-all", "customtkinter", "--collect-all", "yt_dlp", "--collect-all", "uvicorn", "--collect-submodules", "fastapi", "--hidden-import", "uvicorn.logging", "--hidden-import", "uvicorn.loops.auto", "--hidden-import", "uvicorn.protocols.http.auto"]
     tk_temp = ROOT / ".sonore-tk-data"
     if tk_temp.exists():
@@ -59,7 +61,7 @@ def main() -> int:
         try:
             _collect_zipfs_tk(args, tk_temp)
         except tkinter.TclError as error:
-            print(f"Impossible d’extraire les données Tcl/Tk intégrées : {error}", file=sys.stderr)
+            print(f"Could not extract the bundled Tcl/Tk data: {error}", file=sys.stderr)
             return 1
         args.append(str(ROOT / "main.py"))
         ffmpeg = ROOT / "tools" / "ffmpeg" / "ffmpeg.exe"
@@ -68,10 +70,15 @@ def main() -> int:
         completed = subprocess.run(args, cwd=ROOT, check=False)
     finally:
         shutil.rmtree(tk_temp, ignore_errors=True)
+        if legacy_settings is not None:
+            # PyInstaller replaces dist/Sonore; retain local settings for the app's
+            # one-time migration into the per-user settings directory.
+            legacy_settings_path.parent.mkdir(parents=True, exist_ok=True)
+            legacy_settings_path.write_bytes(legacy_settings)
     if completed.returncode == 0:
         app_dir = ROOT / "dist" / "Sonore"
         if not (app_dir / "Sonore.exe").is_file():
-            print(f"Build réussi, mais exécutable introuvable dans {app_dir}.", file=sys.stderr)
+            print(f"Build succeeded, but no executable was found in {app_dir}.", file=sys.stderr)
             return 1
         archive = ROOT / "dist" / "Sonore-windows-x64.zip"
         if archive.exists():
@@ -82,11 +89,11 @@ def main() -> int:
                     continue
                 package.write(path, Path("Sonore") / path.relative_to(app_dir))
         if ffmpeg.is_file():
-            print("FFmpeg a été inclus dans le dossier de l’application.")
+            print("FFmpeg was included in the app folder.")
         else:
-            print("FFmpeg non inclus : Sonore utilisera FFmpeg installé dans le PATH.")
-        print(f"Application construite : {app_dir / 'Sonore.exe'}")
-        print(f"Paquet prêt pour une release GitHub : {archive}")
+            print("FFmpeg was not included; Sonore will use FFmpeg installed on PATH.")
+        print(f"Built app: {app_dir / 'Sonore.exe'}")
+        print(f"GitHub Release package ready: {archive}")
     return completed.returncode
 
 

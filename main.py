@@ -1,4 +1,4 @@
-"""Démarre le serveur FastAPI local et l’interface CustomTkinter."""
+"""Start the local FastAPI server and the CustomTkinter interface."""
 from __future__ import annotations
 
 import threading
@@ -47,15 +47,15 @@ def main() -> None:
             try:
                 root = tk.Tk()
                 root.withdraw()
-                messagebox.showerror("Sonore", f"Impossible de démarrer le serveur local sur {HOST}:{PORT}. Vérifiez que le port n’est pas déjà utilisé.")
+                messagebox.showerror("Sonore", f"Could not start the local server at {HOST}:{PORT}. Check that the port is not already in use.")
                 root.destroy()
             except tk.TclError:
-                print(f"Impossible de démarrer le serveur local sur {HOST}:{PORT}.")
+                print(f"Could not start the local server at {HOST}:{PORT}.")
             return
         app = SonoreApp(settings)
         app.mainloop()
     except tk.TclError as error:
-        print(f"Impossible d’ouvrir l’interface graphique : {error}")
+        print(f"Could not open the graphical interface: {error}")
     finally:
         server.stop()
 

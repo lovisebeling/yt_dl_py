@@ -1,4 +1,4 @@
-"""Fenêtre de réglages des règles de nettoyage des titres."""
+"""Settings window for title-cleanup rules."""
 from __future__ import annotations
 
 import tkinter as tk
@@ -11,7 +11,7 @@ import customtkinter as ctk
 class SettingsWindow(ctk.CTkToplevel):
     def __init__(self, master: ctk.CTk, settings: dict[str, Any], on_save: Callable[[dict[str, Any]], None]) -> None:
         super().__init__(master)
-        self.title("Réglages — Sonore")
+        self.title("Settings — Sonore")
         self.geometry("760x580")
         self.minsize(650, 480)
         self.transient(master)
@@ -28,40 +28,40 @@ class SettingsWindow(ctk.CTkToplevel):
         self.grid_rowconfigure(0, weight=1)
         tabs = ctk.CTkTabview(self)
         tabs.grid(row=0, column=0, sticky="nsew", padx=20, pady=(20, 8))
-        remove_tab = tabs.add("Suppression")
-        replace_tab = tabs.add("Remplacement")
+        remove_tab = tabs.add("Remove text")
+        replace_tab = tabs.add("Replace text")
         self._build_removals(remove_tab)
         self._build_replacements(replace_tab)
         footer = ctk.CTkFrame(self, fg_color="transparent")
         footer.grid(row=1, column=0, sticky="ew", padx=20, pady=(4, 16))
-        ctk.CTkButton(footer, text="Fermer", width=100, fg_color="#30353d", hover_color="#414752", command=self.destroy).pack(side="right", padx=(8, 0))
-        ctk.CTkButton(footer, text="Enregistrer", width=125, command=self._save).pack(side="right")
-        ctk.CTkButton(footer, text="Appliquer aux fichiers d’un dossier…", width=220, fg_color="#30353d", hover_color="#414752", command=self._apply_to_folder).pack(side="left")
+        ctk.CTkButton(footer, text="Close", width=100, fg_color="#30353d", hover_color="#414752", command=self.destroy).pack(side="right", padx=(8, 0))
+        ctk.CTkButton(footer, text="Save", width=125, command=self._save).pack(side="right")
+        ctk.CTkButton(footer, text="Apply to files in a folder…", width=220, fg_color="#30353d", hover_color="#414752", command=self._apply_to_folder).pack(side="left")
 
     def _build_removals(self, parent: ctk.CTkFrame) -> None:
         parent.grid_columnconfigure(0, weight=1)
         parent.grid_rowconfigure(1, weight=1)
-        ctk.CTkLabel(parent, text="Retirer des séquences des titres", font=ctk.CTkFont(size=15, weight="bold")).grid(row=0, column=0, sticky="w", padx=16, pady=(16, 10))
-        self.remove_list = ctk.CTkScrollableFrame(parent, label_text="Séquences enregistrées")
+        ctk.CTkLabel(parent, text="Remove text from titles", font=ctk.CTkFont(size=15, weight="bold")).grid(row=0, column=0, sticky="w", padx=16, pady=(16, 10))
+        self.remove_list = ctk.CTkScrollableFrame(parent, label_text="Saved text")
         self.remove_list.grid(row=1, column=0, sticky="nsew", padx=16, pady=8)
         self._render_removals()
         add = ctk.CTkFrame(parent, fg_color="transparent")
         add.grid(row=2, column=0, sticky="ew", padx=16, pady=16)
-        self.remove_entry = ctk.CTkEntry(add, placeholder_text="Ex. (clip officiel)")
+        self.remove_entry = ctk.CTkEntry(add, placeholder_text="e.g. (official video)")
         self.remove_entry.pack(side="left", fill="x", expand=True, padx=(0, 8))
         self.remove_entry.bind("<Return>", lambda _: self._add_removal())
-        ctk.CTkButton(add, text="Ajouter", width=90, command=self._add_removal).pack(side="right")
+        ctk.CTkButton(add, text="Add", width=90, command=self._add_removal).pack(side="right")
 
     def _render_removals(self) -> None:
         for widget in self.remove_list.winfo_children():
             widget.destroy()
         if not self.removals:
-            ctk.CTkLabel(self.remove_list, text="Aucune séquence — les titres restent inchangés.", text_color="#8a929d").pack(anchor="w", padx=12, pady=10)
+            ctk.CTkLabel(self.remove_list, text="No text to remove — titles will stay unchanged.", text_color="#8a929d").pack(anchor="w", padx=12, pady=10)
         for index, value in enumerate(self.removals):
             row = ctk.CTkFrame(self.remove_list, fg_color="#1c2025")
             row.pack(fill="x", pady=3)
             ctk.CTkLabel(row, text=value, anchor="w").pack(side="left", fill="x", expand=True, padx=12, pady=8)
-            ctk.CTkButton(row, text="Supprimer", width=82, height=28, fg_color="#30353d", hover_color="#664247", command=lambda i=index: self._delete_removal(i)).pack(side="right", padx=8, pady=6)
+            ctk.CTkButton(row, text="Delete", width=82, height=28, fg_color="#30353d", hover_color="#664247", command=lambda i=index: self._delete_removal(i)).pack(side="right", padx=8, pady=6)
 
     def _add_removal(self) -> None:
         value = self.remove_entry.get().strip()
@@ -77,21 +77,21 @@ class SettingsWindow(ctk.CTkToplevel):
     def _build_replacements(self, parent: ctk.CTkFrame) -> None:
         parent.grid_columnconfigure(0, weight=1)
         parent.grid_rowconfigure(0, weight=1)
-        self.replace_list = ctk.CTkScrollableFrame(parent, label_text="Règles de remplacement")
+        self.replace_list = ctk.CTkScrollableFrame(parent, label_text="Replacement rules")
         self.replace_list.grid(row=0, column=0, sticky="nsew", padx=16, pady=(16, 8))
         self._render_replacements()
         form = ctk.CTkFrame(parent, fg_color="#1c2025", corner_radius=12)
         form.grid(row=1, column=0, sticky="ew", padx=16, pady=(8, 16))
         form.grid_columnconfigure((0, 1), weight=1)
-        ctk.CTkLabel(form, text="Séquence recherchée").grid(row=0, column=0, sticky="w", padx=12, pady=(12, 4))
-        ctk.CTkLabel(form, text="Remplacer par").grid(row=0, column=1, sticky="w", padx=12, pady=(12, 4))
-        self.find_entry = ctk.CTkEntry(form, placeholder_text="Ex. Official Video")
+        ctk.CTkLabel(form, text="Find text").grid(row=0, column=0, sticky="w", padx=12, pady=(12, 4))
+        ctk.CTkLabel(form, text="Replace with").grid(row=0, column=1, sticky="w", padx=12, pady=(12, 4))
+        self.find_entry = ctk.CTkEntry(form, placeholder_text="e.g. Official Video")
         self.find_entry.grid(row=1, column=0, sticky="ew", padx=12, pady=(0, 8))
-        self.replace_entry = ctk.CTkEntry(form, placeholder_text="Ex. Audio")
+        self.replace_entry = ctk.CTkEntry(form, placeholder_text="e.g. Audio")
         self.replace_entry.grid(row=1, column=1, sticky="ew", padx=12, pady=(0, 8))
         self.append_var = tk.BooleanVar(value=False)
-        ctk.CTkCheckBox(form, text="Ajouter le remplacement à la fin du titre", variable=self.append_var).grid(row=2, column=0, columnspan=2, sticky="w", padx=12, pady=(0, 8))
-        ctk.CTkButton(form, text="Ajouter la règle", width=130, command=self._add_replacement).grid(row=3, column=1, sticky="e", padx=12, pady=(0, 12))
+        ctk.CTkCheckBox(form, text="Append replacement to the end of the title", variable=self.append_var).grid(row=2, column=0, columnspan=2, sticky="w", padx=12, pady=(0, 8))
+        ctk.CTkButton(form, text="Add rule", width=130, command=self._add_replacement).grid(row=3, column=1, sticky="e", padx=12, pady=(0, 12))
         self.find_entry.bind("<Return>", lambda _: self._add_replacement())
         self.replace_entry.bind("<Return>", lambda _: self._add_replacement())
 
@@ -99,14 +99,14 @@ class SettingsWindow(ctk.CTkToplevel):
         for widget in self.replace_list.winfo_children():
             widget.destroy()
         if not self.replacements:
-            ctk.CTkLabel(self.replace_list, text="Aucune règle de remplacement enregistrée.", text_color="#8a929d").pack(anchor="w", padx=12, pady=10)
+            ctk.CTkLabel(self.replace_list, text="No replacement rules saved.", text_color="#8a929d").pack(anchor="w", padx=12, pady=10)
         for index, rule in enumerate(self.replacements):
             row = ctk.CTkFrame(self.replace_list, fg_color="#1c2025")
             row.pack(fill="x", pady=3)
-            mode = "ajouté à la fin" if rule.get("append") else "remplacé sur place"
+            mode = "appended" if rule.get("append") else "replaced in place"
             label = f"{rule['find']}  →  {rule['replace'] or '∅'}  ·  {mode}"
             ctk.CTkLabel(row, text=label, anchor="w").pack(side="left", fill="x", expand=True, padx=12, pady=8)
-            ctk.CTkButton(row, text="Supprimer", width=82, height=28, fg_color="#30353d", hover_color="#664247", command=lambda i=index: self._delete_replacement(i)).pack(side="right", padx=8, pady=6)
+            ctk.CTkButton(row, text="Delete", width=82, height=28, fg_color="#30353d", hover_color="#664247", command=lambda i=index: self._delete_replacement(i)).pack(side="right", padx=8, pady=6)
 
     def _add_replacement(self) -> None:
         find = self.find_entry.get().strip()

@@ -1,24 +1,24 @@
 # Sonore
 
-Application Windows locale pour télécharger l’audio des vidéos YouTube, le convertir en MP3 avec FFmpeg et, pour une sélection de playlist, regrouper les fichiers dans un ZIP.
+A local Windows app for downloading audio from YouTube videos, converting it to MP3 with FFmpeg, and combining selected playlist tracks into a ZIP archive.
 
-## Prérequis
+## Requirements
 
-- Windows 10 ou 11 et Python 3.10 ou ultérieur pour lancer depuis les sources.
-- FFmpeg installé et disponible dans `PATH` pour lancer depuis les sources. Pour construire une application autonome, placer `ffmpeg.exe` dans `tools/ffmpeg/` avant de lancer la compilation.
-- Respecter les droits d’auteur et les conditions d’utilisation des contenus téléchargés.
+- Windows 10 or 11 and Python 3.10 or later to run from source.
+- FFmpeg installed and available on `PATH` when running from source. To bundle it in a build, place `ffmpeg.exe` in `tools/ffmpeg/` before building.
+- Follow copyright laws and the terms of service for the content you download.
 
-## Installation et lancement
+## Install and run
 
-### Utiliser la version Windows (sans installer Python)
+### Use the Windows release (Python not required)
 
-1. Ouvrez **Releases** sur la page GitHub du projet et téléchargez `Sonore-windows-x64.zip` dans la dernière version.
-2. Décompressez complètement l’archive dans un dossier où vous avez le droit d’écrire.
-3. Lancez `Sonore/Sonore.exe` (Windows peut afficher un avertissement pour une application non signée ; vérifiez que le fichier vient bien de la release du projet).
+1. Open **Releases** on the GitHub project page and download `Sonore-windows-x64.zip` from the latest release.
+2. Extract the entire archive to a folder you can write to.
+3. Run `Sonore/Sonore.exe`. Windows may show a warning because the app is unsigned; make sure the file came from this project's release.
 
-Le ZIP contient le dossier complet nécessaire à l’application : ne déplacez pas `Sonore.exe` seul hors de ce dossier. Python n’est pas requis. FFmpeg doit être installé et présent dans `PATH` pour convertir les téléchargements en MP3, sauf si le mainteneur l’a inclus dans la version publiée. Les réglages sont enregistrés dans `settings.json` à côté de `Sonore.exe`.
+The ZIP contains the complete app folder. Do not move `Sonore.exe` out of that folder. Python is not required. FFmpeg must be installed and available on `PATH` to convert downloads to MP3, unless the release maintainer included it. Settings are stored separately from the app in `%APPDATA%\Sonore\settings.json`.
 
-### Lancer depuis les sources
+### Run from source
 
 ```powershell
 py -m venv .venv
@@ -27,47 +27,47 @@ python -m pip install -r requirements.txt
 python main.py
 ```
 
-L’interface CustomTkinter en mode sombre démarre un serveur FastAPI local invisible, lié uniquement à `127.0.0.1:8765`. Le serveur se ferme avec la fenêtre.
+The dark CustomTkinter interface starts a hidden local FastAPI server bound only to `127.0.0.1:8765`. The server shuts down when the window closes.
 
-Collez un lien YouTube puis cliquez sur **Télécharger** ou appuyez sur Entrée. **Parcourir** permet de choisir le dossier. Les modes sont exclusifs : **Ignorer les playlists** traite uniquement la vidéo ; **Télécharger cette vidéo et celles après elle dans la playlist** traite la vidéo indiquée puis les suivantes. Plusieurs pistes sont regroupées dans un ZIP. Les étapes et confirmations apparaissent dans la console intégrée, sans fenêtre de réussite.
+Paste a YouTube link and click **Download**, or press Enter. Use **Browse** to choose an output folder. The playlist modes are mutually exclusive: **Ignore playlists** downloads only the linked video; **Download this video and the following videos in its playlist** downloads that video and all later tracks. Multiple tracks are combined into a ZIP. Progress and confirmations appear in the built-in console.
 
-Dans **Réglages**, gérez les séquences à supprimer et les remplacements de titre. Un remplacement peut être ajouté à la fin du titre. Le bouton **Appliquer aux fichiers d’un dossier…** permet aussi de renommer les fichiers audio déjà présents dans un dossier choisi selon les règles enregistrées ; une confirmation est demandée avant le renommage.
+In **Settings**, manage text to remove from titles and replacement rules. A replacement can be appended to the end of a title. **Apply to files in a folder…** also renames existing audio files in a selected folder using the saved rules, after confirmation.
 
-## Configuration enregistrée
+## Settings
 
-`settings.json` est créé à côté de l’exécutable PyInstaller, ou à côté de `main.py` pendant le développement. Il conserve le dossier, le mode de playlist et les règles de nommage. Supprimez ce fichier pour revenir aux réglages par défaut.
+On Windows, settings are stored in `%APPDATA%\Sonore\settings.json`. On other systems, they use the standard user configuration directory. Settings persist across sessions and app updates, even if the app folder is replaced or removed. On first launch, Sonore automatically copies an older `settings.json` found next to the app or `main.py`. Settings include the output folder, playlist mode, and title rules. To reset them, close Sonore and delete `%APPDATA%\Sonore\settings.json`.
 
-## Construction de l’exécutable Windows
+## Build the Windows executable
 
-La compilation se fait sous Windows. Python 3.10 ou ultérieur est requis. Depuis la racine du dépôt :
+Build on Windows with Python 3.10 or later. From the repository root:
 
 ```powershell
 py -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
-# Facultatif : placez ffmpeg.exe dans tools/ffmpeg/ pour l’inclure au paquet.
+# Optional: place ffmpeg.exe in tools/ffmpeg/ to include it in the package.
 python scripts/build.py
 ```
 
-Le script construit une application Windows 64 bits en mode dossier, puis crée `dist/Sonore-windows-x64.zip`. Publiez ce ZIP comme asset d’une GitHub Release ; il contient le dossier complet `Sonore/` et son exécutable `Sonore.exe`. Le binaire seul se trouve aussi dans `dist/Sonore/Sonore.exe`, mais ne doit pas être distribué séparément. Le ZIP exclut `settings.json` pour ne pas publier les réglages locaux du poste de compilation. Si FFmpeg n’est pas fourni dans `tools/ffmpeg/`, l’application le recherche dans le `PATH` du système.
+The script builds a 64-bit Windows app in directory mode, then creates `dist/Sonore-windows-x64.zip`. Attach this ZIP to a GitHub Release. It contains the complete `Sonore/` folder and `Sonore.exe`. The executable is also available at `dist/Sonore/Sonore.exe`, but should not be distributed on its own. The ZIP excludes `settings.json` so local build-machine settings are not published. If FFmpeg is not placed in `tools/ffmpeg/`, the app looks for it on the system `PATH`.
 
-Le workflow GitHub Actions `.github/workflows/release.yml` peut aussi construire le ZIP automatiquement quand une release est publiée. Il fonctionne également à la demande depuis l’onglet **Actions** et fournit alors le ZIP comme artefact téléchargeable.
+The GitHub Actions workflow at `.github/workflows/release.yml` can build the ZIP automatically when a release is published. It can also be run manually from the **Actions** tab; the ZIP will then be available as a downloadable artifact.
 
-## Structure
+## Project structure
 
 ```text
-main.py                 Démarrage de l’interface et du serveur local
-app/config.py           Persistance des réglages JSON
-app/api.py              API FastAPI locale
-app/downloads.py        Gestion yt-dlp, progression, MP3 et ZIP
-app/ui.py               Interface CustomTkinter en mode sombre
-app/settings_window.py  Onglets de règles de titres
-scripts/build.py        Construction Windows avec PyInstaller
+main.py                 Starts the interface and local server
+app/config.py           JSON settings persistence
+app/api.py              Local FastAPI API
+app/downloads.py        yt-dlp, progress, MP3 conversion, and ZIP archives
+app/ui.py               Dark CustomTkinter interface
+app/settings_window.py  Title-rule settings tabs
+scripts/build.py        Windows build with PyInstaller
 ```
 
-## Dépannage
+## Troubleshooting
 
-- **FFmpeg absent** : installez FFmpeg et ajoutez son dossier au `PATH`, ou placez `ffmpeg.exe` dans `tools/ffmpeg/` avant de reconstruire.
-- **Erreur 403 de YouTube** : les versions de yt-dlp antérieures à `2026.08.19` peuvent échouer sur certains flux. Mettez à jour les dépendances et reconstruisez l’exécutable. YouTube peut aussi bloquer temporairement une adresse IP ou refuser une connexion via VPN/proxy ; dans ce cas, réessayez plus tard ou depuis un autre réseau.
-- **Autre erreur réseau** : mettez à jour yt-dlp (`python -m pip install -U yt-dlp`) et vérifiez la disponibilité du contenu.
-- **Le serveur ne démarre pas** : vérifiez qu’aucun autre programme n’utilise `127.0.0.1:8765`.
+- **FFmpeg not found**: install FFmpeg and add its folder to `PATH`, or place `ffmpeg.exe` in `tools/ffmpeg/` before building.
+- **YouTube HTTP 403**: yt-dlp versions earlier than `2026.08.19` may fail for some streams. Update the dependencies and rebuild the app. YouTube may also temporarily block an IP address or reject connections through a VPN/proxy; try again later or use another network.
+- **Other network errors**: update yt-dlp (`python -m pip install -U yt-dlp`) and check that the content is available.
+- **The server does not start**: check that another program is not using `127.0.0.1:8765`.

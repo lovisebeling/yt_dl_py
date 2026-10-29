@@ -1,4 +1,4 @@
-"""API FastAPI locale pour l’interface et les tâches de téléchargement."""
+"""Local FastAPI API for the interface and download jobs."""
 from __future__ import annotations
 
 import asyncio
@@ -20,7 +20,7 @@ class DownloadRequest(BaseModel):
 
 def create_app(settings: SettingsStore, downloads: DownloadManager | None = None) -> FastAPI:
     manager = downloads or DownloadManager(settings)
-    api = FastAPI(title="Sonore local", docs_url=None, redoc_url=None, openapi_url=None)
+    api = FastAPI(title="Sonore Local API", docs_url=None, redoc_url=None, openapi_url=None)
     api.state.download_manager = manager
     api.state.settings_store = settings
 
@@ -37,7 +37,7 @@ def create_app(settings: SettingsStore, downloads: DownloadManager | None = None
         try:
             return settings.save(payload)
         except OSError as error:
-            raise HTTPException(status_code=500, detail=f"Impossible d’enregistrer les réglages : {error}") from error
+            raise HTTPException(status_code=500, detail=f"Could not save settings: {error}") from error
 
     @api.post("/downloads", status_code=202)
     async def start_download(request: DownloadRequest) -> dict[str, str]:
@@ -51,14 +51,14 @@ def create_app(settings: SettingsStore, downloads: DownloadManager | None = None
     async def job_state(job_id: str) -> dict[str, Any]:
         job = manager.get(job_id)
         if job is None:
-            raise HTTPException(status_code=404, detail="Téléchargement introuvable.")
+            raise HTTPException(status_code=404, detail="Download not found.")
         return {"job_id": job.job_id, "state": job.state}
 
     @api.get("/downloads/{job_id}/events")
     async def job_events(job_id: str) -> dict[str, Any]:
         job = manager.get(job_id)
         if job is None:
-            raise HTTPException(status_code=404, detail="Téléchargement introuvable.")
+            raise HTTPException(status_code=404, detail="Download not found.")
         events: list[dict[str, Any]] = []
         for _ in range(100):
             try:

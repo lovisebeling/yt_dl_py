@@ -1,4 +1,4 @@
-"""Téléchargements audio yt-dlp, progression et archives ZIP."""
+"""Audio downloads via yt-dlp, progress reporting, and ZIP archives."""
 from __future__ import annotations
 
 import queue
@@ -66,12 +66,12 @@ class DownloadManager:
 
     def start(self, url: str, output_dir: str, mode: str) -> DownloadJob:
         if not url.startswith(("https://", "http://")):
-            raise ValueError("Collez une adresse de vidéo YouTube valide.")
+            raise ValueError("Enter a valid YouTube video URL.")
         if mode not in {"single", "from_video"}:
-            raise ValueError("Le mode de téléchargement demandé est invalide.")
+            raise ValueError("The selected download mode is invalid.")
         destination = Path(output_dir).expanduser()
         if not destination.exists() or not destination.is_dir():
-            raise ValueError("Le dossier de destination n’existe pas.")
+            raise ValueError("The output folder does not exist.")
         job = DownloadJob(uuid4().hex, url, str(destination.resolve()), mode)
         with self._lock:
             self.jobs[job.job_id] = job
@@ -85,7 +85,7 @@ class DownloadManager:
 
     def _run(self, job: DownloadJob) -> None:
         job.state = "running"
-        job.emit("log", message="Analyse du lien…")
+        job.emit("log", message="Analyzing link…")
         settings = self.settings_store.load()
         try:
             with tempfile.TemporaryDirectory(prefix="sonore_") as temp_dir:
@@ -102,9 +102,9 @@ class DownloadManager:
                         percent = min(100.0, current * 100 / size) if size else 0.0
                         entry_progress[index] = percent
                         aggregate = sum(entry_progress.values()) / max(total, len(entry_progress))
-                        job.emit("progress", percent=aggregate, current=index, total=total, status="Téléchargement")
+                        job.emit("progress", percent=aggregate, current=index, total=total, status="Downloading")
                     elif status == "finished":
-                        job.emit("progress", percent=100.0, current=int(data.get("playlist_index") or 1), total=int(data.get("n_entries") or 1), status="Conversion MP3…")
+                        job.emit("progress", percent=100.0, current=int(data.get("playlist_index") or 1), total=int(data.get("n_entries") or 1), status="Converting to MP3…")
 
                 options: dict[str, Any] = {
                     "format": "bestaudio/best", "outtmpl": template,
@@ -124,10 +124,10 @@ class DownloadManager:
                 with YoutubeDL(options) as ydl:
                     info = ydl.extract_info(job.url, download=True)
                 if not info:
-                    raise DownloadError("La vidéo ou la playlist n’a fourni aucun fichier audio.")
+                    raise DownloadError("The video or playlist did not provide any audio files.")
                 candidates = sorted(Path(temp_dir).glob("*.mp3"))
                 if not candidates:
-                    raise DownloadError("Aucun MP3 n’a été créé. Vérifiez que FFmpeg est installé.")
+                    raise DownloadError("No MP3 file was created. Check that FFmpeg is installed.")
                 results = self._result_files(candidates, info, settings)
                 if len(results) == 1:
                     destination = self._unique_path(Path(job.output_dir) / f"{sanitize_filename(results[0][1])}.mp3")
@@ -146,9 +146,9 @@ class DownloadManager:
                             used_names.add(candidate_name.lower())
                             archive.write(source, candidate_name)
                 job.state = "completed"
-                job.emit("progress", percent=100.0, current=len(results), total=len(results), status="Terminé")
+                job.emit("progress", percent=100.0, current=len(results), total=len(results), status="Complete")
                 job.emit("completed", path=str(destination), count=len(results), archive=destination.suffix.lower() == ".zip")
-                job.emit("log", message=f"✓ {len(results)} fichier(s) prêt(s) : {destination}")
+                job.emit("log", message=f"✓ {len(results)} file(s) ready: {destination}")
         except Exception as error:
             job.state = "failed"
             message = self._readable_error(error)
@@ -181,11 +181,11 @@ class DownloadManager:
             candidate = path.with_name(f"{path.stem} ({index}){path.suffix}")
             if not candidate.exists():
                 return candidate
-        raise OSError("Impossible de trouver un nom de fichier disponible.")
+        raise OSError("Could not find an available filename.")
 
     @staticmethod
     def _playlist_index(url: str) -> int | None:
-        """Repère l’index de la vidéo courante avant de télécharger la suite."""
+        """Find the current video's index before downloading the rest of a playlist."""
         query = parse_qs(urlparse(url).query)
         if not query.get("list"):
             return None
@@ -201,12 +201,12 @@ class DownloadManager:
                 if entry and str(entry.get("id", "")) == video_id:
                     return int(entry.get("playlist_index") or position)
         except Exception as error:
-            raise DownloadError("Impossible de retrouver la position de cette vidéo dans la playlist.") from error
-        raise DownloadError("Cette vidéo n’a pas été retrouvée dans la playlist indiquée par le lien.")
+            raise DownloadError("Could not find this video's position in the playlist.") from error
+        raise DownloadError("This video was not found in the playlist from the provided link.")
 
     @staticmethod
     def _bundled_ffmpeg() -> str | None:
-        """Trouve FFmpeg inclus dans le bundle PyInstaller, s’il existe."""
+        """Find FFmpeg bundled with the PyInstaller app, if present."""
         import sys
 
         roots = [Path(getattr(sys, "_MEIPASS", "")), Path(sys.executable).resolve().parent]
@@ -223,10 +223,10 @@ class DownloadManager:
         lowered = message.lower()
         if "403" in lowered and ("forbidden" in lowered or "http error 403" in lowered):
             return (
-                "YouTube a refusé le flux audio (HTTP 403). Mettez à jour yt-dlp et reconstruisez l’application ; "
-                "si l’erreur persiste, réessayez plus tard et vérifiez VPN/proxy ou blocage temporaire de l’adresse IP. "
-                f"Détail : {message[:400]}"
+                "YouTube rejected the audio stream (HTTP 403). Update yt-dlp and rebuild the app; "
+                "if the error persists, try again later and check your VPN/proxy or a temporary IP block. "
+                f"Details: {message[:400]}"
             )
         if "ffmpeg" in lowered:
-            return f"FFmpeg est introuvable. Installez-le et ajoutez-le au PATH. Détail : {message}"
+            return f"FFmpeg could not be found. Install it and add it to PATH. Details: {message}"
         return message[:800]
